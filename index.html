@@ -13,50 +13,42 @@
     else{show('Errore JS:\n'+(e.message||'')+'\n'+(e.filename||'')+':'+(e.lineno||''));}
   },true);
   window.addEventListener('unhandledrejection',function(e){var m=e.reason&&e.reason.message?e.reason.message:String(e.reason);show('Promise rifiutata:\n'+m,'#F4C24A');});
-  window.addEventListener('load',function(){setTimeout(function(){
-    var r=document.getElementById('root');
-    if(r&&!r.firstChild){
-      var miss=[];
-      if(typeof React==='undefined')miss.push('React');
-      if(typeof ReactDOM==='undefined')miss.push('ReactDOM');
-      if(typeof firebase==='undefined')miss.push('firebase');
-      if(typeof Babel==='undefined')miss.push('Babel/JSX');
-      show(miss.length?('Librerie non caricate: '+miss.join(', ')+'\nProbabile browser in-app che blocca gli script: apri il link in Safari o Chrome.'):'App non avviata (nessuna libreria mancante).','#9A92AD');
-    }
-  },4000);});
 })();
 </script>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  :root{--ink:#14121C;--panel:#211C2E;--panel2:#2C2540;--line:#3A3350;--text:#EDE9F2;--muted:#9A92AD;--hot:#FF3B5C;--gold:#F4C24A;--win:#46E5A0;}
+  :root{--ink:#14121C;--panel:#211C2E;--panel2:#2C2540;--line:#3A3350;--text:#EDE9F2;--muted:#9A92AD;--hot:#FF3B5C;--gold:#F4C24A;--win:#46E5A0;--blu:#5C8CFF;}
   body{margin:0;font-family:'Archivo',system-ui,-apple-system,sans-serif;color:var(--text);
     background:radial-gradient(120% 80% at 50% -10%, #241B3A 0%, var(--ink) 55%) fixed;min-height:100vh;}
   #root{max-width:520px;margin:0 auto;padding:18px 14px 40px;}
-  .disp{font-weight:800;text-transform:uppercase;letter-spacing:.02em;}
-  .mono{font-family:ui-monospace,'SF Mono',monospace;}
   .eyebrow{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold);font-weight:800;}
   h1{font-weight:900;text-transform:uppercase;font-size:34px;line-height:.9;margin:4px 0 0;}
-  .hot{color:var(--hot);}.muted{color:var(--muted);}.gold{color:var(--gold);}
+  .disp{font-weight:800;text-transform:uppercase;letter-spacing:.02em;}
+  .hot{color:var(--hot);}.muted{color:var(--muted);}.gold{color:var(--gold);}.winc{color:var(--win);}.bluc{color:var(--blu);}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;}
-  .stamp{display:inline-block;border:2px solid var(--gold);color:var(--gold);text-transform:uppercase;letter-spacing:.14em;
-    font-size:11px;padding:4px 10px;border-radius:4px;font-weight:800;}
+  .stamp{display:inline-block;border:2px solid var(--gold);color:var(--gold);text-transform:uppercase;letter-spacing:.14em;font-size:11px;padding:4px 10px;border-radius:4px;font-weight:800;}
   button{font-family:inherit;cursor:pointer;}
-  .btn{width:100%;border:none;border-radius:14px;padding:15px;font-weight:900;font-size:17px;text-transform:uppercase;
-    letter-spacing:.03em;color:var(--ink);background:var(--hot);box-shadow:0 6px 0 #B81E3C;transition:transform .05s,box-shadow .05s;margin-bottom:10px;}
+  .btn{width:100%;border:none;border-radius:14px;padding:15px;font-weight:900;font-size:17px;text-transform:uppercase;letter-spacing:.03em;color:var(--ink);background:var(--hot);box-shadow:0 6px 0 #B81E3C;transition:transform .05s,box-shadow .05s;margin-bottom:10px;}
   .btn:active{transform:translateY(4px);box-shadow:0 2px 0 #B81E3C;}
   .btn:disabled{opacity:.4;}
   .btn.gold{background:var(--gold);box-shadow:0 6px 0 #B0871E;}.btn.gold:active{box-shadow:0 2px 0 #B0871E;}
   .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line);box-shadow:none;}
-  input{width:100%;background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:10px;
-    padding:13px 14px;font-size:16px;font-family:inherit;margin-bottom:10px;}
+  input{width:100%;background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:13px 14px;font-size:16px;font-family:inherit;margin-bottom:10px;}
   input:focus{outline:none;border-color:var(--gold);}
-  .codebox{font-family:ui-monospace,monospace;font-weight:800;letter-spacing:.3em;font-size:30px;color:var(--gold);
-    background:var(--ink);border:1px dashed var(--line);border-radius:10px;padding:12px;text-align:center;}
+  .codebox{font-family:ui-monospace,monospace;font-weight:800;letter-spacing:.3em;font-size:30px;color:var(--gold);background:var(--ink);border:1px dashed var(--line);border-radius:10px;padding:12px;text-align:center;}
   .prow{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line);}
   .prow:last-child{border-bottom:none;}
   .dot{width:9px;height:9px;border-radius:50%;background:var(--win);}
   .err{color:var(--hot);font-weight:700;font-size:14px;margin:6px 0;}
   .between{display:flex;justify-content:space-between;align-items:center;}
+  .board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:280px;margin:12px auto;}
+  .cell{aspect-ratio:1;border-radius:12px;border:1px solid var(--line);background:var(--ink);font-size:40px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+  .standrow{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line);}
+  .standrow:last-child{border-bottom:none;}
+  .rank{width:22px;color:var(--muted);font-weight:800;}
+  .pts{margin-left:auto;font-weight:800;color:var(--gold);font-family:ui-monospace,monospace;}
+  .minim{font-size:12px;color:var(--muted);margin:6px 0;text-align:center;}
+  .center{text-align:center;}
 </style>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -82,10 +74,27 @@ const db = firebase.firestore();
 const { useState, useEffect } = React;
 
 const code4 = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 31)]).join("");
+const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; } return a; };
+const ONLINE_CLASSICS = ["tris"]; // si allarga man mano che portiamo i giochi online
+const GNAME = { tris: "Tris" };
+
+function pairings(players) {
+  const ms = [];
+  for (let i = 0; i < players.length; i++) for (let j = i + 1; j < players.length; j++) ms.push({ a: players[i].id, b: players[j].id });
+  return shuffle(ms);
+}
+function newGame(gid, players) {
+  return { id: gid, matches: pairings(players), mi: 0, wins: [], board: { cells: Array(9).fill(null), turn: "a" } };
+}
+function trisWinner(c) {
+  const L = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  for (const l of L) if (c[l[0]] && c[l[0]] === c[l[1]] && c[l[1]] === c[l[2]]) return c[l[0]];
+  return null;
+}
 
 function App() {
   const [uid, setUid] = useState(null);
-  const [screen, setScreen] = useState("home"); // home | create | join | lobby
+  const [screen, setScreen] = useState("home");
   const [name, setName] = useState("");
   const [codeInput, setCodeInput] = useState("");
   const [roomCode, setRoomCode] = useState(null);
@@ -97,18 +106,18 @@ function App() {
     auth.signInAnonymously().catch((e) => setErr("Auth non riuscita: " + e.message));
     return auth.onAuthStateChanged((u) => { if (u) setUid(u.uid); });
   }, []);
-
   useEffect(() => {
     if (!roomCode) return;
     return db.collection("rooms").doc(roomCode).onSnapshot(
-      (snap) => { if (snap.exists) { setRoom(snap.data()); setScreen("lobby"); } },
+      (s) => { if (s.exists) setRoom(s.data()); },
       (e) => setErr("Lettura stanza: " + e.message)
     );
   }, [roomCode]);
 
+  const ref = () => db.collection("rooms").doc(roomCode);
+
   const create = async () => {
-    if (!name.trim() || !uid) return;
-    setBusy(true); setErr("");
+    if (!name.trim() || !uid) return; setBusy(true); setErr("");
     const c = code4();
     try {
       await db.collection("rooms").doc(c).set({
@@ -116,116 +125,197 @@ function App() {
         players: [{ id: uid, name: name.trim() }],
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
-      setRoomCode(c);
+      setRoomCode(c); setScreen("room");
     } catch (e) { setErr("Creazione: " + e.message); }
     setBusy(false);
   };
-
   const join = async () => {
     const c = codeInput.trim().toUpperCase();
-    if (!name.trim() || !c || !uid) return;
-    setBusy(true); setErr("");
-    const ref = db.collection("rooms").doc(c);
+    if (!name.trim() || !c || !uid) return; setBusy(true); setErr("");
+    const r = db.collection("rooms").doc(c);
     try {
       await db.runTransaction(async (tx) => {
-        const snap = await tx.get(ref);
-        if (!snap.exists) throw new Error("Stanza non trovata");
-        const data = snap.data();
-        if (data.status !== "lobby") throw new Error("Torneo già iniziato");
-        const players = data.players || [];
+        const s = await tx.get(r);
+        if (!s.exists) throw new Error("Stanza non trovata");
+        const d = s.data();
+        if (d.status !== "lobby") throw new Error("Torneo già iniziato");
+        const players = d.players || [];
         if (!players.some((p) => p.id === uid)) players.push({ id: uid, name: name.trim() });
-        tx.update(ref, { players });
+        tx.update(r, { players });
       });
-      setRoomCode(c);
+      setRoomCode(c); setScreen("room");
     } catch (e) { setErr(e.message); }
     setBusy(false);
   };
-
-  const start = async () => {
-    try { await db.collection("rooms").doc(roomCode).update({ status: "running" }); }
+  const startTournament = async () => {
+    try { await ref().update({ status: "running", lineup: ONLINE_CLASSICS, cur: 0, results: {}, game: newGame(ONLINE_CLASSICS[0], room.players) }); }
     catch (e) { setErr("Avvio: " + e.message); }
   };
-
   const leave = () => { setRoomCode(null); setRoom(null); setErr(""); setScreen("home"); };
 
-  const isHost = room && room.host === uid;
+  const pname = (id) => { const p = (room && room.players || []).find((x) => x.id === id); return p ? p.name : "?"; };
+
+  // ---- mossa Tris (online) ----
+  const move = async (i) => {
+    const g = room.game, m = g.matches[g.mi];
+    const role = uid === m.a ? "a" : uid === m.b ? "b" : null;
+    if (!role || g.board.turn !== role || g.board.cells[i]) return;
+    const cells = g.board.cells.slice(); cells[i] = role;
+    const w = trisWinner(cells);
+    const full = cells.every(Boolean);
+    let upd;
+    if (w) {
+      const wins = [...g.wins, w === "a" ? m.a : m.b];
+      if (g.mi + 1 < g.matches.length) {
+        upd = { game: { ...g, wins, mi: g.mi + 1, board: { cells: Array(9).fill(null), turn: "a" } } };
+      } else {
+        const results = { ...(room.results || {}), [room.cur]: wins };
+        if (room.cur + 1 < room.lineup.length) {
+          upd = { results, cur: room.cur + 1, game: newGame(room.lineup[room.cur + 1], room.players) };
+        } else {
+          upd = { results, status: "final", game: { ...g, wins, board: { cells, turn: g.board.turn } } };
+        }
+      }
+    } else if (full) {
+      upd = { game: { ...g, board: { cells: Array(9).fill(null), turn: "a" } } };
+    } else {
+      upd = { game: { ...g, board: { cells, turn: g.board.turn === "a" ? "b" : "a" } } };
+    }
+    try { await ref().update(upd); } catch (e) { setErr("Mossa: " + e.message); }
+  };
+
+  const standings = () => {
+    const pts = {}; (room.players || []).forEach((p) => (pts[p.id] = 0));
+    Object.values(room.results || {}).forEach((ws) => ws.forEach((x) => { if (pts[x] != null) pts[x]++; }));
+    return (room.players || []).slice().sort((a, b) => pts[b.id] - pts[a.id]).map((p) => ({ ...p, pts: pts[p.id] }));
+  };
+
+  // ================= RENDER =================
+  const header = (
+    <header style={{ marginBottom: 16 }}>
+      <div className="eyebrow">Presidenza · Online</div>
+      <h1>Torneo <span className="hot">Videogiochistico</span></h1>
+    </header>
+  );
+
+  if (!uid) return <div>{header}<div className="card muted">Connessione in corso…</div>{err && <div className="err">{err}</div>}</div>;
+
+  // pre-stanza
+  if (!room) {
+    return (
+      <div>{header}
+        {err && <div className="err">{err}</div>}
+        {screen === "home" && (
+          <div className="card">
+            <p className="muted" style={{ marginTop: 0 }}>Crea una stanza e condividi il codice, oppure entra con un codice.</p>
+            <button className="btn gold" onClick={() => { setErr(""); setScreen("create"); }}>Crea stanza</button>
+            <button className="btn ghost" onClick={() => { setErr(""); setScreen("join"); }}>Entra con codice</button>
+          </div>
+        )}
+        {screen === "create" && (
+          <div className="card">
+            <div className="disp" style={{ marginBottom: 10 }}>Il tuo nome</div>
+            <input placeholder="Es. Antonio" value={name} maxLength={14} onChange={(e) => setName(e.target.value)} />
+            <button className="btn gold" disabled={busy || !name.trim()} onClick={create}>{busy ? "Creo…" : "Crea la stanza"}</button>
+            <button className="btn ghost" onClick={() => setScreen("home")}>Indietro</button>
+          </div>
+        )}
+        {screen === "join" && (
+          <div className="card">
+            <div className="disp" style={{ marginBottom: 10 }}>Entra in una stanza</div>
+            <input placeholder="Codice (es. K7P2)" value={codeInput} maxLength={4} onChange={(e) => setCodeInput(e.target.value.toUpperCase())} style={{ letterSpacing: ".2em" }} />
+            <input placeholder="Il tuo nome" value={name} maxLength={14} onChange={(e) => setName(e.target.value)} />
+            <button className="btn gold" disabled={busy || !name.trim() || codeInput.length < 4} onClick={join}>{busy ? "Entro…" : "Entra"}</button>
+            <button className="btn ghost" onClick={() => setScreen("home")}>Indietro</button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const isHost = room.host === uid;
+
+  // LOBBY
+  if (room.status === "lobby") {
+    return (
+      <div>{header}
+        {err && <div className="err">{err}</div>}
+        <div className="card">
+          <p className="muted" style={{ marginTop: 0 }}>Condividi il codice con gli sfidanti:</p>
+          <div className="codebox">{roomCode}</div>
+        </div>
+        <div className="card">
+          <div className="eyebrow" style={{ marginBottom: 6 }}>Partecipanti ({(room.players || []).length})</div>
+          {(room.players || []).map((p) => (
+            <div className="prow" key={p.id}><span className="dot"></span><span>{p.name}</span>{p.id === room.host && <span className="gold" style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800 }}>HOST</span>}</div>
+          ))}
+        </div>
+        {isHost ? (
+          <button className="btn gold" disabled={(room.players || []).length < 2} onClick={startTournament}>
+            {(room.players || []).length < 2 ? "Servono almeno 2 giocatori" : "Avvia torneo · Classici"}
+          </button>
+        ) : <div className="card muted center">In attesa che l'host avvii il torneo…</div>}
+        <button className="btn ghost" onClick={leave}>Esci dalla stanza</button>
+      </div>
+    );
+  }
+
+  // FINAL
+  if (room.status === "final") {
+    const st = standings();
+    return (
+      <div className="center">
+        <div className="eyebrow">Campione del Torneo</div>
+        <div style={{ fontSize: 54, margin: "12px 0" }}>🏆</div>
+        <h1 className="hot" style={{ fontSize: 40 }}>{st[0] ? st[0].name : ""}</h1>
+        <div className="card" style={{ marginTop: 18, textAlign: "left" }}>
+          <div className="eyebrow" style={{ marginBottom: 6 }}>Classifica finale</div>
+          {st.map((p, i) => <div className="standrow" key={p.id}><span className="rank" style={{ color: i === 0 ? "var(--gold)" : "var(--muted)" }}>{i + 1}</span><span>{p.name}</span><span className="pts">{p.pts} pt</span></div>)}
+        </div>
+        <button className="btn ghost" onClick={leave}>Esci dalla stanza</button>
+      </div>
+    );
+  }
+
+  // RUNNING (Tris girone)
+  const g = room.game, m = g.matches[g.mi], role = uid === m.a ? "a" : uid === m.b ? "b" : null;
+  const myTurn = role && g.board.turn === role;
+  const mk = { a: "✕", b: "◯" }, col = { a: "var(--hot)", b: "var(--blu)" };
+  const tally = {}; (room.players || []).forEach((p) => (tally[p.id] = 0)); g.wins.forEach((x) => { if (tally[x] != null) tally[x]++; });
+  const st = standings();
 
   return (
-    <div>
-      <header style={{ marginBottom: 18 }}>
-        <div className="eyebrow">Presidenza · Online</div>
-        <h1>Torneo <span className="hot">Videogiochistico</span></h1>
-      </header>
-
-      {!uid && <div className="card muted">Connessione in corso…</div>}
+    <div>{header}
       {err && <div className="err">{err}</div>}
-
-      {uid && screen === "home" && (
-        <div className="card">
-          <p className="muted" style={{ marginTop: 0 }}>Crea una stanza e condividi il codice, oppure entra in una stanza esistente.</p>
-          <button className="btn gold" onClick={() => { setErr(""); setScreen("create"); }}>Crea stanza</button>
-          <button className="btn ghost" onClick={() => { setErr(""); setScreen("join"); }}>Entra con codice</button>
+      <div className="card">
+        <div className="between" style={{ marginBottom: 4 }}>
+          <span className="eyebrow">{GNAME[g.id]} · girone</span>
+          <span className="muted" style={{ fontSize: 12 }}>partita {g.mi + 1}/{g.matches.length}</span>
         </div>
-      )}
-
-      {uid && screen === "create" && (
-        <div className="card">
-          <div className="disp" style={{ marginBottom: 10 }}>Il tuo nome</div>
-          <input placeholder="Es. Antonio" value={name} maxLength={14} onChange={(e) => setName(e.target.value)} />
-          <button className="btn gold" disabled={busy || !name.trim()} onClick={create}>{busy ? "Creo…" : "Crea la stanza"}</button>
-          <button className="btn ghost" onClick={() => setScreen("home")}>Indietro</button>
+        <div className="between" style={{ marginBottom: 6 }}>
+          <span className="disp" style={{ color: col.a }}>✕ {pname(m.a)}</span>
+          <span className="muted">vs</span>
+          <span className="disp" style={{ color: col.b }}>◯ {pname(m.b)}</span>
         </div>
-      )}
-
-      {uid && screen === "join" && (
-        <div className="card">
-          <div className="disp" style={{ marginBottom: 10 }}>Entra in una stanza</div>
-          <input placeholder="Codice (es. K7P2)" value={codeInput} maxLength={4}
-            onChange={(e) => setCodeInput(e.target.value.toUpperCase())} style={{ letterSpacing: ".2em", textTransform: "uppercase" }} />
-          <input placeholder="Il tuo nome" value={name} maxLength={14} onChange={(e) => setName(e.target.value)} />
-          <button className="btn gold" disabled={busy || !name.trim() || codeInput.length < 4} onClick={join}>{busy ? "Entro…" : "Entra"}</button>
-          <button className="btn ghost" onClick={() => setScreen("home")}>Indietro</button>
+        <div className="board">
+          {g.board.cells.map((v, i) => (
+            <button key={i} className="cell" style={{ color: v ? col[v] : "var(--muted)" }} onClick={() => move(i)}>{v ? mk[v] : ""}</button>
+          ))}
         </div>
-      )}
-
-      {uid && screen === "lobby" && room && (
-        <div>
-          <div className="card">
-            <p className="muted" style={{ marginTop: 0 }}>Condividi questo codice con gli sfidanti:</p>
-            <div className="codebox">{roomCode}</div>
-          </div>
-          <div className="card">
-            <div className="between" style={{ marginBottom: 6 }}>
-              <span className="eyebrow">Partecipanti ({(room.players || []).length})</span>
-              {room.status !== "lobby" && <span className="stamp">Avviato</span>}
-            </div>
-            {(room.players || []).map((p) => (
-              <div className="prow" key={p.id}>
-                <span className="dot"></span>
-                <span>{p.name}</span>
-                {p.id === room.host && <span className="gold" style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800 }}>HOST</span>}
-              </div>
-            ))}
-          </div>
-
-          {room.status === "lobby" ? (
-            isHost ? (
-              <button className="btn gold" disabled={(room.players || []).length < 2} onClick={start}>
-                {(room.players || []).length < 2 ? "Servono almeno 2 giocatori" : "Avvia il torneo"}
-              </button>
-            ) : (
-              <div className="card muted" style={{ textAlign: "center" }}>In attesa che l'host avvii il torneo…</div>
-            )
-          ) : (
-            <div className="card" style={{ textAlign: "center" }}>
-              <div className="stamp" style={{ marginBottom: 10 }}>Torneo avviato</div>
-              <p className="muted" style={{ margin: 0 }}>La lobby funziona! I giochi arrivano nel prossimo passo.</p>
-            </div>
-          )}
-
-          <button className="btn ghost" onClick={leave}>Esci dalla stanza</button>
+        <div className="minim">
+          {role ? (myTurn ? "Tocca a te!" : "Aspetta la mossa dell'avversario…") : `Stai guardando: tocca a ${pname(g.board.turn === "a" ? m.a : m.b)}`}
         </div>
-      )}
+        <div style={{ borderTop: "1px solid var(--line)", paddingTop: 8, marginTop: 6 }}>
+          <div className="eyebrow" style={{ marginBottom: 4 }}>Vittorie nel girone</div>
+          {(room.players || []).slice().sort((a, b) => tally[b.id] - tally[a.id]).map((p) => (
+            <div className="between" key={p.id} style={{ padding: "2px 2px" }}><span style={{ fontSize: 14 }}>{p.name}</span><span className="gold" style={{ fontFamily: "ui-monospace,monospace" }}>{tally[p.id]}</span></div>
+          ))}
+        </div>
+      </div>
+      <div className="card">
+        <div className="eyebrow" style={{ marginBottom: 6 }}>Classifica generale</div>
+        {st.map((p, i) => <div className="standrow" key={p.id}><span className="rank">{i + 1}</span><span>{p.name}</span><span className="pts">{p.pts} pt</span></div>)}
+      </div>
     </div>
   );
 }
