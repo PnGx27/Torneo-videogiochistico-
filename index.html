@@ -43,6 +43,8 @@
   .between{display:flex;justify-content:space-between;align-items:center;}
   .board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:280px;margin:12px auto;}
   .cell{aspect-ratio:1;border-radius:12px;border:1px solid var(--line);background:var(--ink);font-size:40px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+  .c4{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;background:var(--panel2);padding:6px;border-radius:12px;max-width:330px;margin:12px auto;}
+  .c4cell{aspect-ratio:1;border-radius:50%;border:none;cursor:pointer;}
   .standrow{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line);}
   .standrow:last-child{border-bottom:none;}
   .rank{width:22px;color:var(--muted);font-weight:800;}
@@ -76,20 +78,45 @@ const { useState, useEffect } = React;
 
 const code4 = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 31)]).join("");
 const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; } return a; };
-const ONLINE_CLASSICS = ["tris"]; // si allarga man mano che portiamo i giochi online
-const GNAME = { tris: "Tris" };
+const ONLINE_CLASSICS = ["tris", "forza4"];
+const GNAME = { tris: "Tris", forza4: "Forza Quattro" };
 
 function pairings(players) {
   const ms = [];
   for (let i = 0; i < players.length; i++) for (let j = i + 1; j < players.length; j++) ms.push({ a: players[i].id, b: players[j].id });
   return shuffle(ms);
 }
+const C4R = 6, C4C = 7;
+function initialBoard(gid) { return { cells: Array(gid === "forza4" ? C4R * C4C : 9).fill(null), turn: "a" }; }
 function newGame(gid, players) {
-  return { id: gid, matches: pairings(players), mi: 0, wins: [], board: { cells: Array(9).fill(null), turn: "a" } };
+  return { id: gid, matches: pairings(players), mi: 0, wins: [], board: initialBoard(gid) };
 }
 function trisWinner(c) {
   const L = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
   for (const l of L) if (c[l[0]] && c[l[0]] === c[l[1]] && c[l[1]] === c[l[2]]) return c[l[0]];
+  return null;
+}
+function c4Winner(cells) {
+  const at = (r, c) => (r < 0 || r >= C4R || c < 0 || c >= C4C) ? null : cells[r * C4C + c];
+  const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+  for (let r = 0; r < C4R; r++) for (let c = 0; c < C4C; c++) { const p = at(r, c); if (!p) continue; for (const [dr, dc] of dirs) { let k = 1; while (k < 4 && at(r + dr * k, c + dc * k) === p) k++; if (k === 4) return p; } }
+  return null;
+}
+function computeMove(g, role, input) {
+  const cells = g.board.cells.slice();
+  if (g.id === "tris") {
+    if (cells[input]) return null;
+    cells[input] = role;
+    const winner = trisWinner(cells);
+    return { cells, winner, draw: !winner && cells.every(Boolean) };
+  }
+  if (g.id === "forza4") {
+    let placed = -1;
+    for (let r = C4R - 1; r >= 0; r--) { const i = r * C4C + input; if (!cells[i]) { cells[i] = role; placed = i; break; } }
+    if (placed < 0) return null;
+    const winner = c4Winner(cells);
+    return { cells, winner, draw: !winner && cells.every(Boolean) };
+  }
   return null;
 }
 
@@ -162,19 +189,19 @@ function App() {
 
   const pname = (id) => { const p = (room && room.players || []).find((x) => x.id === id); return p ? p.name : "?"; };
 
-  // ---- mossa Tris (online) ----
-  const move = async (i) => {
+  // ---- mossa duello (online, generica) ----
+  const move = async (input) => {
     const g = room.game, m = g.matches[g.mi];
     const role = uid === m.a ? "a" : uid === m.b ? "b" : null;
-    if (!role || g.board.turn !== role || g.board.cells[i]) return;
-    const cells = g.board.cells.slice(); cells[i] = role;
-    const w = trisWinner(cells);
-    const full = cells.every(Boolean);
+    if (!role || g.board.turn !== role) return;
+    const res = computeMove(g, role, input);
+    if (!res) return;
+    const { cells, winner, draw } = res;
     let upd;
-    if (w) {
-      const wins = [...g.wins, w === "a" ? m.a : m.b];
+    if (winner) {
+      const wins = [...g.wins, winner === "a" ? m.a : m.b];
       if (g.mi + 1 < g.matches.length) {
-        upd = { game: { ...g, wins, mi: g.mi + 1, board: { cells: Array(9).fill(null), turn: "a" } } };
+        upd = { game: { ...g, wins, mi: g.mi + 1, board: initialBoard(g.id) } };
       } else {
         const results = { ...(room.results || {}), [room.cur]: wins };
         if (room.cur + 1 < room.lineup.length) {
@@ -183,10 +210,10 @@ function App() {
           upd = { results, status: "final", game: { ...g, wins, board: { cells, turn: g.board.turn } } };
         }
       }
-    } else if (full) {
-      upd = { game: { ...g, board: { cells: Array(9).fill(null), turn: "a" } } };
+    } else if (draw) {
+      upd = { game: { ...g, board: initialBoard(g.id) } };
     } else {
-      upd = { game: { ...g, board: { cells, turn: g.board.turn === "a" ? "b" : "a" } } };
+      upd = { game: { ...g, board: { cells, turn: role === "a" ? "b" : "a" } } };
     }
     try { await ref().update(upd); } catch (e) { setErr("Mossa: " + e.message); }
   };
@@ -291,7 +318,8 @@ function App() {
   }
   const m = g.matches[g.mi], role = uid === m.a ? "a" : uid === m.b ? "b" : null;
   const myTurn = role && g.board.turn === role;
-  const mk = { a: "✕", b: "◯" }, col = { a: "var(--hot)", b: "var(--blu)" };
+  const isC4 = g.id === "forza4";
+  const mk = isC4 ? { a: "●", b: "●" } : { a: "✕", b: "◯" }, col = { a: "var(--hot)", b: "var(--blu)" };
   const tally = {}; (room.players || []).forEach((p) => (tally[p.id] = 0)); g.wins.forEach((x) => { if (tally[x] != null) tally[x]++; });
   const st = standings();
 
@@ -304,15 +332,23 @@ function App() {
           <span className="muted" style={{ fontSize: 12 }}>partita {g.mi + 1}/{g.matches.length}</span>
         </div>
         <div className="between" style={{ marginBottom: 6 }}>
-          <span className="disp" style={{ color: col.a }}>✕ {pname(m.a)}</span>
+          <span className="disp" style={{ color: col.a }}>{mk.a} {pname(m.a)}</span>
           <span className="muted">vs</span>
-          <span className="disp" style={{ color: col.b }}>◯ {pname(m.b)}</span>
+          <span className="disp" style={{ color: col.b }}>{mk.b} {pname(m.b)}</span>
         </div>
-        <div className="board">
-          {g.board.cells.map((v, i) => (
-            <button key={i} className="cell" style={{ color: v ? col[v] : "var(--muted)" }} onClick={() => move(i)}>{v ? mk[v] : ""}</button>
-          ))}
-        </div>
+        {isC4 ? (
+          <div className="c4">
+            {g.board.cells.map((v, i) => (
+              <button key={i} className="c4cell" style={{ background: v ? col[v] : "var(--ink)" }} onClick={() => move(i % C4C)} />
+            ))}
+          </div>
+        ) : (
+          <div className="board">
+            {g.board.cells.map((v, i) => (
+              <button key={i} className="cell" style={{ color: v ? col[v] : "var(--muted)" }} onClick={() => move(i)}>{v ? mk[v] : ""}</button>
+            ))}
+          </div>
+        )}
         <div className="minim">
           {role ? (myTurn ? "Tocca a te!" : "Aspetta la mossa dell'avversario…") : `Stai guardando: tocca a ${pname(g.board.turn === "a" ? m.a : m.b)}`}
         </div>
@@ -346,4 +382,4 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 })();
 </script>
 </body>
-</html>
+</html
