@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>Torneo Videogiochistico</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  :root{--ink:#14121C;--panel:#211C2E;--panel2:#2C2540;--line:#3A3350;--text:#EDE9F2;--muted:#9A92AD;--hot:#FF3B5C;--gold:#F4C24A;--win:#46E5A0;}
+  body{margin:0;font-family:'Archivo',system-ui,-apple-system,sans-serif;color:var(--text);
+    background:radial-gradient(120% 80% at 50% -10%, #241B3A 0%, var(--ink) 55%) fixed;min-height:100vh;}
+  #root{max-width:520px;margin:0 auto;padding:18px 14px 40px;}
+  .disp{font-weight:800;text-transform:uppercase;letter-spacing:.02em;}
+  .mono{font-family:ui-monospace,'SF Mono',monospace;}
+  .eyebrow{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold);font-weight:800;}
+  h1{font-weight:900;text-transform:uppercase;font-size:34px;line-height:.9;margin:4px 0 0;}
+  .hot{color:var(--hot);}.muted{color:var(--muted);}.gold{color:var(--gold);}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;}
+  .stamp{display:inline-block;border:2px solid var(--gold);color:var(--gold);text-transform:uppercase;letter-spacing:.14em;
+    font-size:11px;padding:4px 10px;border-radius:4px;font-weight:800;}
+  button{font-family:inherit;cursor:pointer;}
+  .btn{width:100%;border:none;border-radius:14px;padding:15px;font-weight:900;font-size:17px;text-transform:uppercase;
+    letter-spacing:.03em;color:var(--ink);background:var(--hot);box-shadow:0 6px 0 #B81E3C;transition:transform .05s,box-shadow .05s;margin-bottom:10px;}
+  .btn:active{transform:translateY(4px);box-shadow:0 2px 0 #B81E3C;}
+  .btn:disabled{opacity:.4;}
+  .btn.gold{background:var(--gold);box-shadow:0 6px 0 #B0871E;}.btn.gold:active{box-shadow:0 2px 0 #B0871E;}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line);box-shadow:none;}
+  input{width:100%;background:var(--ink);border:1px solid var(--line);color:var(--text);border-radius:10px;
+    padding:13px 14px;font-size:16px;font-family:inherit;margin-bottom:10px;}
+  input:focus{outline:none;border-color:var(--gold);}
+  .codebox{font-family:ui-monospace,monospace;font-weight:800;letter-spacing:.3em;font-size:30px;color:var(--gold);
+    background:var(--ink);border:1px dashed var(--line);border-radius:10px;padding:12px;text-align:center;}
+  .prow{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line);}
+  .prow:last-child{border-bottom:none;}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--win);}
+  .err{color:var(--hot);font-weight:700;font-size:14px;margin:6px 0;}
+  .between{display:flex;justify-content:space-between;align-items:center;}
+</style>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const firebaseConfig = {
+  apiKey: "AIzaSyB4fWp1y-yeQPPoEMqSUcQht8pS473QMHY",
+  authDomain: "torneo-videogiochistico.firebaseapp.com",
+  projectId: "torneo-videogiochistico",
+  storageBucket: "torneo-videogiochistico.firebasestorage.app",
+  messagingSenderId: "140983749680",
+  appId: "1:140983749680:web:3a00a172f0f668c551b1f5"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const { useState, useEffect } = React;
+
+const code4 = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 31)]).join("");
+
+function App() {
+  const [uid, setUid] = useState(null);
+  const [screen, setScreen] = useState("home"); // home | create | join | lobby
+  const [name, setName] = useState("");
+  const [codeInput, setCodeInput] = useState("");
+  const [roomCode, setRoomCode] = useState(null);
+  const [room, setRoom] = useState(null);
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    auth.signInAnonymously().catch((e) => setErr("Auth non riuscita: " + e.message));
+    return auth.onAuthStateChanged((u) => { if (u) setUid(u.uid); });
+  }, []);
+
+  useEffect(() => {
+    if (!roomCode) return;
+    return db.collection("rooms").doc(roomCode).onSnapshot(
+      (snap) => { if (snap.exists) { setRoom(snap.data()); setScreen("lobby"); } },
+      (e) => setErr("Lettura stanza: " + e.message)
+    );
+  }, [roomCode]);
+
+  const create = async () => {
+    if (!name.trim() || !uid) return;
+    setBusy(true); setErr("");
+    const c = code4();
+    try {
+      await db.collection("rooms").doc(c).set({
+        host: uid, status: "lobby",
+        players: [{ id: uid, name: name.trim() }],
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      setRoomCode(c);
+    } catch (e) { setErr("Creazione: " + e.message); }
+    setBusy(false);
+  };
+
+  const join = async () => {
+    const c = codeInput.trim().toUpperCase();
+    if (!name.trim() || !c || !uid) return;
+    setBusy(true); setErr("");
+    const ref = db.collection("rooms").doc(c);
+    try {
+      await db.runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists) throw new Error("Stanza non trovata");
+        const data = snap.data();
+        if (data.status !== "lobby") throw new Error("Torneo già iniziato");
+        const players = data.players || [];
+        if (!players.some((p) => p.id === uid)) players.push({ id: uid, name: name.trim() });
+        tx.update(ref, { players });
+      });
+      setRoomCode(c);
+    } catch (e) { setErr(e.message); }
+    setBusy(false);
+  };
+
+  const start = async () => {
+    try { await db.collection("rooms").doc(roomCode).update({ status: "running" }); }
+    catch (e) { setErr("Avvio: " + e.message); }
+  };
+
+  const leave = () => { setRoomCode(null); setRoom(null); setErr(""); setScreen("home"); };
+
+  const isHost = room && room.host === uid;
+
+  return (
+    <div>
+      <header style={{ marginBottom: 18 }}>
+        <div className="eyebrow">Presidenza · Online</div>
+        <h1>Torneo <span className="hot">Videogiochistico</span></h1>
+      </header>
+
+      {!uid && <div className="card muted">Connessione in corso…</div>}
+      {err && <div className="err">{err}</div>}
+
+      {uid && screen === "home" && (
+        <div className="card">
+          <p className="muted" style={{ marginTop: 0 }}>Crea una stanza e condividi il codice, oppure entra in una stanza esistente.</p>
+          <button className="btn gold" onClick={() => { setErr(""); setScreen("create"); }}>Crea stanza</button>
+          <button className="btn ghost" onClick={() => { setErr(""); setScreen("join"); }}>Entra con codice</button>
+        </div>
+      )}
+
+      {uid && screen === "create" && (
+        <div className="card">
+          <div className="disp" style={{ marginBottom: 10 }}>Il tuo nome</div>
+          <input placeholder="Es. Antonio" value={name} maxLength={14} onChange={(e) => setName(e.target.value)} />
+          <button className="btn gold" disabled={busy || !name.trim()} onClick={create}>{busy ? "Creo…" : "Crea la stanza"}</button>
+          <button className="btn ghost" onClick={() => setScreen("home")}>Indietro</button>
+        </div>
+      )}
+
+      {uid && screen === "join" && (
+        <div className="card">
+          <div className="disp" style={{ marginBottom: 10 }}>Entra in una stanza</div>
+          <input placeholder="Codice (es. K7P2)" value={codeInput} maxLength={4}
+            onChange={(e) => setCodeInput(e.target.value.toUpperCase())} style={{ letterSpacing: ".2em", textTransform: "uppercase" }} />
+          <input placeholder="Il tuo nome" value={name} maxLength={14} onChange={(e) => setName(e.target.value)} />
+          <button className="btn gold" disabled={busy || !name.trim() || codeInput.length < 4} onClick={join}>{busy ? "Entro…" : "Entra"}</button>
+          <button className="btn ghost" onClick={() => setScreen("home")}>Indietro</button>
+        </div>
+      )}
+
+      {uid && screen === "lobby" && room && (
+        <div>
+          <div className="card">
+            <p className="muted" style={{ marginTop: 0 }}>Condividi questo codice con gli sfidanti:</p>
+            <div className="codebox">{roomCode}</div>
+          </div>
+          <div className="card">
+            <div className="between" style={{ marginBottom: 6 }}>
+              <span className="eyebrow">Partecipanti ({(room.players || []).length})</span>
+              {room.status !== "lobby" && <span className="stamp">Avviato</span>}
+            </div>
+            {(room.players || []).map((p) => (
+              <div className="prow" key={p.id}>
+                <span className="dot"></span>
+                <span>{p.name}</span>
+                {p.id === room.host && <span className="gold" style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800 }}>HOST</span>}
+              </div>
+            ))}
+          </div>
+
+          {room.status === "lobby" ? (
+            isHost ? (
+              <button className="btn gold" disabled={(room.players || []).length < 2} onClick={start}>
+                {(room.players || []).length < 2 ? "Servono almeno 2 giocatori" : "Avvia il torneo"}
+              </button>
+            ) : (
+              <div className="card muted" style={{ textAlign: "center" }}>In attesa che l'host avvii il torneo…</div>
+            )
+          ) : (
+            <div className="card" style={{ textAlign: "center" }}>
+              <div className="stamp" style={{ marginBottom: 10 }}>Torneo avviato</div>
+              <p className="muted" style={{ margin: 0 }}>La lobby funziona! I giochi arrivano nel prossimo passo.</p>
+            </div>
+          )}
+
+          <button className="btn ghost" onClick={leave}>Esci dalla stanza</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
