@@ -67,7 +67,7 @@
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel" data-presets="react">
+<script id="appsrc" type="text/babel-src">
 const firebaseConfig = {
   apiKey: "AIzaSyB4fWp1y-yeQPPoEMqSUcQht8pS473QMHY",
   authDomain: "torneo-videogiochistico.firebaseapp.com",
@@ -231,6 +231,18 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+<script>
+(function () {
+  try {
+    var src = document.getElementById("appsrc").textContent;
+    var out = Babel.transform(src, { presets: [["react", { runtime: "classic" }]] }).code;
+    (0, eval)(out);
+  } catch (e) {
+    var r = document.getElementById("root");
+    if (r) { var d = document.createElement("div"); d.style.cssText = "color:#FF3B5C;font:13px/1.5 ui-monospace,monospace;padding:16px;white-space:pre-wrap"; d.textContent = "Errore di avvio:\n" + (e && e.message ? e.message : e); r.appendChild(d); }
+  }
+})();
 </script>
 </body>
 </html>
