@@ -71,6 +71,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+try { db.settings({ experimentalForceLongPolling: true }); } catch (e) {}
 const { useState, useEffect } = React;
 
 const code4 = () => Array.from({ length: 4 }, () => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 31)]).join("");
@@ -148,8 +149,14 @@ function App() {
     setBusy(false);
   };
   const startTournament = async () => {
-    try { await ref().update({ status: "running", lineup: ONLINE_CLASSICS, cur: 0, results: {}, game: newGame(ONLINE_CLASSICS[0], room.players) }); }
-    catch (e) { setErr("Avvio: " + e.message); }
+    setBusy(true); setErr("");
+    try {
+      const snap = await ref().get();
+      const players = (snap.data() && snap.data().players) || [];
+      if (players.length < 2) { setErr("Servono almeno 2 giocatori nella stanza."); setBusy(false); return; }
+      await ref().update({ status: "running", lineup: ONLINE_CLASSICS, cur: 0, results: {}, game: newGame(ONLINE_CLASSICS[0], players) });
+    } catch (e) { setErr("Avvio: " + e.message); }
+    setBusy(false);
   };
   const leave = () => { setRoomCode(null); setRoom(null); setErr(""); setScreen("home"); };
 
@@ -251,8 +258,8 @@ function App() {
           ))}
         </div>
         {isHost ? (
-          <button className="btn gold" disabled={(room.players || []).length < 2} onClick={startTournament}>
-            {(room.players || []).length < 2 ? "Servono almeno 2 giocatori" : "Avvia torneo · Classici"}
+          <button className="btn gold" disabled={busy || (room.players || []).length < 2} onClick={startTournament}>
+            {busy ? "Avvio…" : (room.players || []).length < 2 ? "Servono almeno 2 giocatori" : "Avvia torneo · Classici"}
           </button>
         ) : <div className="card muted center">In attesa che l'host avvii il torneo…</div>}
         <button className="btn ghost" onClick={leave}>Esci dalla stanza</button>
@@ -278,7 +285,11 @@ function App() {
   }
 
   // RUNNING (Tris girone)
-  const g = room.game, m = g.matches[g.mi], role = uid === m.a ? "a" : uid === m.b ? "b" : null;
+  const g = room.game;
+  if (!g || !g.matches || g.matches.length === 0) {
+    return <div>{header}<div className="card center muted">Preparazione del torneo…</div></div>;
+  }
+  const m = g.matches[g.mi], role = uid === m.a ? "a" : uid === m.b ? "b" : null;
   const myTurn = role && g.board.turn === role;
   const mk = { a: "✕", b: "◯" }, col = { a: "var(--hot)", b: "var(--blu)" };
   const tally = {}; (room.players || []).forEach((p) => (tally[p.id] = 0)); g.wins.forEach((x) => { if (tally[x] != null) tally[x]++; });
